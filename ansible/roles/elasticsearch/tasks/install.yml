@@ -1,0 +1,33 @@
+- name: Add Elastic signing key
+  ansible.builtin.get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /etc/apt/keyrings/elasticsearch.asc
+    mode: "0644"
+
+- name: Add Elastic apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/{{ es_major_version }}/apt stable main"
+    filename: elastic
+    state: present
+
+- name: Install Elasticsearch package
+  ansible.builtin.apt:
+    name: "elasticsearch{{ '=' + es_version if es_version else '' }}"
+    state: present
+
+# Upgrades must be a deliberate rolling operation, not a side effect of apt.
+- name: Hold Elasticsearch package version
+  ansible.builtin.dpkg_selections:
+    name: elasticsearch
+    selection: hold
+
+# A node that has never started has no cluster state. Decides whether
+# bootstrap-only settings (initial master nodes, bootstrap password) apply.
+- name: Check whether this node has already joined a cluster
+  ansible.builtin.stat:
+    path: /var/lib/elasticsearch/_state
+  register: es_state_dir
+
+- name: Record bootstrap status
+  ansible.builtin.set_fact:
+    es_bootstrapped: "{{ es_state_dir.stat.exists }}"

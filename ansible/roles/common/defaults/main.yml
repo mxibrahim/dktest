@@ -1,0 +1,11 @@
+# 1 GiB instances cannot hold an ES heap plus the OS without risk of the OOM
+# killer. A small swap file with swappiness=1 is a safety net, not a resource.
+common_swap_size_mb: 1024
+common_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - jq
+  - unzip
+  - unattended-upgrades

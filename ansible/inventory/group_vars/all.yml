@@ -1,0 +1,6 @@
+# Where Ansible keeps generated secrets on the control machine (git-ignored).
+secrets_dir: "{{ playbook_dir }}/../.secrets"
+
+# Generated once, then reused on every run (ansible.builtin.password lookup).
+es_elastic_password: "{{ lookup('ansible.builtin.password', secrets_dir + '/elastic_password', length=32, chars=['ascii_letters', 'digits']) }}"
+es_demo_password: "{{ lookup('ansible.builtin.password', secrets_dir + '/demo_password', length=32, chars=['ascii_letters', 'digits']) }}"

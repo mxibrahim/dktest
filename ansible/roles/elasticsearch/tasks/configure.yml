@@ -1,0 +1,62 @@
+- name: Read keystore entries
+  ansible.builtin.command: "{{ es_home }}/bin/elasticsearch-keystore list"
+  register: es_keystore
+  changed_when: false
+
+# The package's security auto-configuration stores PKCS#12 passwords and a
+# random elastic password hash. We replace both with our own PEM certs and a
+# known password, so those entries must go.
+- name: Remove auto-configuration keystore entries
+  ansible.builtin.command: "{{ es_home }}/bin/elasticsearch-keystore remove {{ item }}"
+  loop:
+    - xpack.security.http.ssl.keystore.secure_password
+    - xpack.security.transport.ssl.keystore.secure_password
+    - xpack.security.transport.ssl.truststore.secure_password
+    - autoconfiguration.password_hash
+  when: item in es_keystore.stdout_lines
+  notify: Restart elasticsearch
+
+# Sets the elastic superuser password when the cluster first creates its
+# security index. Removed again once the cluster is up (security.yml).
+- name: Set bootstrap password for the elastic user
+  ansible.builtin.shell: >-
+    printf '%s' "$ES_PASSWORD" | {{ es_home }}/bin/elasticsearch-keystore add -x -f bootstrap.password
+  environment:
+    ES_PASSWORD: "{{ es_elastic_password }}"
+  when:
+    - not es_bootstrapped
+    - "'bootstrap.password' not in es_keystore.stdout_lines"
+  no_log: true
+  notify: Restart elasticsearch
+
+- name: Configure JVM heap
+  ansible.builtin.template:
+    src: heap.options.j2
+    dest: "{{ es_conf_dir }}/jvm.options.d/heap.options"
+    owner: root
+    group: elasticsearch
+    mode: "0640"
+  notify: Restart elasticsearch
+
+- name: Configure elasticsearch.yml
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: "{{ es_conf_dir }}/elasticsearch.yml"
+    owner: root
+    group: elasticsearch
+    mode: "0660"
+  notify: Restart elasticsearch
+
+- name: Apply pending restarts
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start Elasticsearch
+  ansible.builtin.systemd_service:
+    name: elasticsearch
+    enabled: true
+    state: started
+
+- name: Wait for the HTTPS port
+  ansible.builtin.wait_for:
+    port: 9200
+    timeout: 600

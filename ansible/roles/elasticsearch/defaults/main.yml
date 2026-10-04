@@ -1,0 +1,24 @@
+es_major_version: "9.x"           # Elastic apt repo channel
+es_version: ""                    # pin e.g. "9.1.5"; empty = latest in channel (then held)
+es_heap_size: "512m"              # ~50% of a 1 GiB instance; raise on bigger types
+es_cluster_name: elasticsearch    # overridden by the Terraform inventory
+
+es_ca_validity_days: 1825
+es_cert_validity_days: 730
+
+es_home: /usr/share/elasticsearch
+es_conf_dir: /etc/elasticsearch
+es_certs_dir: "{{ es_conf_dir }}/certs"
+# CA private key and generated certs live only on the first node, root-only.
+# Must be outside es_conf_dir: ES watches that tree and fails on unreadable dirs.
+es_certgen_dir: /root/elasticsearch-certgen
+es_cert_host: "{{ groups['elasticsearch'][0] }}"
+
+es_nodes: "{{ groups['elasticsearch'] }}"
+es_single_node: "{{ es_nodes | length == 1 }}"
+es_api_url: https://localhost:9200
+
+# Least-privilege demo user used by scripts/verify.sh.
+es_demo_user: demo
+es_demo_role: demo_writer
+es_demo_index_pattern: "demo-*"

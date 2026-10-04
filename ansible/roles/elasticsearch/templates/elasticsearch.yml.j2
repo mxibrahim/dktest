@@ -1,0 +1,55 @@
+# {{ ansible_managed }}
+cluster.name: {{ es_cluster_name }}
+node.name: {{ inventory_hostname }}
+
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+
+# Bind to loopback and the VPC address only. Public access arrives via the
+# EC2 public IP (NAT to the private IP) and is filtered by the security group.
+network.host: ["_local_", "_site_"]
+network.publish_host: {{ private_ip }}
+http.port: 9200
+transport.port: 9300
+
+{% if es_single_node %}
+discovery.type: single-node
+{% else %}
+discovery.seed_hosts:
+{% for host in es_nodes %}
+  - {{ hostvars[host].private_ip }}:9300
+{% endfor %}
+{% if not es_bootstrapped %}
+# Only for the very first cluster formation; dropped on later runs.
+cluster.initial_master_nodes:
+{% for host in es_nodes %}
+  - {{ host }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+# --- Security ---------------------------------------------------------------
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: false
+
+# Client <-> node: HTTPS
+xpack.security.http.ssl:
+  enabled: true
+  key: certs/node.key
+  certificate: certs/node.crt
+  certificate_authorities: ["certs/ca.crt"]
+
+# Node <-> node: mutual TLS, certificate and hostname/IP verified
+xpack.security.transport.ssl:
+  enabled: true
+  verification_mode: full
+  client_authentication: required
+  key: certs/node.key
+  certificate: certs/node.crt
+  certificate_authorities: ["certs/ca.crt"]
+
+# --- Small-instance tuning --------------------------------------------------
+# ML needs far more memory than a micro instance has.
+xpack.ml.enabled: false
+# Avoid background downloads of GeoIP databases we don't use.
+ingest.geoip.downloader.enabled: false

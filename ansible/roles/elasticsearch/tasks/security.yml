@@ -1,0 +1,71 @@
+- name: Wait for the cluster to form and turn green
+  ansible.builtin.uri:
+    url: "{{ es_api_url }}/_cluster/health?wait_for_status=green&wait_for_nodes={{ es_nodes | length }}&timeout=30s"
+    url_username: elastic
+    url_password: "{{ es_elastic_password }}"
+    force_basic_auth: true
+    ca_path: "{{ es_certs_dir }}/ca.crt"
+  register: es_health
+  until: es_health.status == 200 and es_health.json.status == 'green'
+  retries: 30
+  delay: 10
+  run_once: true
+
+# bootstrap.password is only a fallback read from each node's keystore; it is
+# never written to the cluster. Persist it in the security index before the
+# keystore entry is removed, or a restarted node rejects the elastic user.
+- name: Persist the elastic password in the security index
+  ansible.builtin.uri:
+    url: "{{ es_api_url }}/_security/user/elastic/_password"
+    method: POST
+    url_username: elastic
+    url_password: "{{ es_elastic_password }}"
+    force_basic_auth: true
+    ca_path: "{{ es_certs_dir }}/ca.crt"
+    body_format: json
+    body:
+      password: "{{ es_elastic_password }}"
+  changed_when: false
+  no_log: true
+  run_once: true
+
+- name: Create least-privilege role for the demo user
+  ansible.builtin.uri:
+    url: "{{ es_api_url }}/_security/role/{{ es_demo_role }}"
+    method: PUT
+    url_username: elastic
+    url_password: "{{ es_elastic_password }}"
+    force_basic_auth: true
+    ca_path: "{{ es_certs_dir }}/ca.crt"
+    body_format: json
+    body:
+      cluster: []
+      indices:
+        - names: ["{{ es_demo_index_pattern }}"]
+          privileges: [create_index, write, read, view_index_metadata]
+  register: es_role
+  changed_when: es_role.json.role.created
+  run_once: true
+
+- name: Create demo user
+  ansible.builtin.uri:
+    url: "{{ es_api_url }}/_security/user/{{ es_demo_user }}"
+    method: PUT
+    url_username: elastic
+    url_password: "{{ es_elastic_password }}"
+    force_basic_auth: true
+    ca_path: "{{ es_certs_dir }}/ca.crt"
+    body_format: json
+    body:
+      password: "{{ es_demo_password }}"
+      roles: ["{{ es_demo_role }}"]
+  register: es_user
+  changed_when: es_user.json.created
+  no_log: true
+  run_once: true
+
+- name: Remove bootstrap password from the keystore
+  ansible.builtin.command: "{{ es_home }}/bin/elasticsearch-keystore remove bootstrap.password"
+  register: es_bootstrap_remove
+  changed_when: es_bootstrap_remove.rc == 0
+  failed_when: false

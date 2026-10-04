@@ -1,0 +1,23 @@
+- name: Wait for freshly created instances
+  hosts: elasticsearch
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH and cloud-init
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Wait for cloud-init to finish (apt locks)
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+
+- name: Base OS hardening and tuning
+  hosts: elasticsearch
+  become: true
+  roles:
+    - common
+
+- name: Elasticsearch with TLS and authentication
+  hosts: elasticsearch
+  become: true
+  roles:
+    - elasticsearch

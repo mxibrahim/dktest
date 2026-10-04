@@ -1,0 +1,11 @@
+- name: Install Elasticsearch
+  ansible.builtin.import_tasks: install.yml
+
+- name: Generate and distribute TLS certificates
+  ansible.builtin.import_tasks: certs.yml
+
+- name: Configure Elasticsearch
+  ansible.builtin.import_tasks: configure.yml
+
+- name: Configure users and roles
+  ansible.builtin.import_tasks: security.yml
