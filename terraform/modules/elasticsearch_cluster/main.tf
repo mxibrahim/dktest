@@ -21,6 +21,8 @@ resource "aws_instance" "es" {
   key_name               = aws_key_pair.this.key_name
   iam_instance_profile   = aws_iam_instance_profile.es.name
   vpc_security_group_ids = [aws_security_group.es.id]
+  # Private subnets only; reachable via SSM Session Manager, never directly.
+  associate_public_ip_address = false
   # Round-robin across AZs so losing one AZ only loses one node.
   subnet_id = var.subnet_ids[count.index % length(var.subnet_ids)]
 

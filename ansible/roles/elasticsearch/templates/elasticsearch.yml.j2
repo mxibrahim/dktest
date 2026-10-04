@@ -5,8 +5,8 @@ node.name: {{ inventory_hostname }}
 path.data: /var/lib/elasticsearch
 path.logs: /var/log/elasticsearch
 
-# Bind to loopback and the VPC address only. Public access arrives via the
-# EC2 public IP (NAT to the private IP) and is filtered by the security group.
+# Bind to loopback and the VPC address only. Nodes have no public IP; clients
+# arrive through an SSM tunnel and are filtered by the security group.
 network.host: ["_local_", "_site_"]
 network.publish_host: {{ private_ip }}
 http.port: 9200

@@ -1,4 +1,5 @@
-# Instance role: only what Session Manager needs. No static credentials on the box.
+# Instance role: only what Session Manager needs (the operator access path).
+# No static credentials on the box.
 data "aws_iam_policy_document" "assume_ec2" {
   statement {
     actions = ["sts:AssumeRole"]

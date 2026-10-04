@@ -19,7 +19,7 @@ variable "vpc_id" {
 }
 
 variable "subnet_ids" {
-  description = "Subnets to spread nodes across (round-robin), ideally one per AZ."
+  description = "Private subnets to spread nodes across (round-robin), ideally one per AZ."
   type        = list(string)
 }
 
@@ -45,13 +45,8 @@ variable "root_volume_size" {
 }
 
 variable "ssh_public_key" {
-  description = "Contents of the SSH public key used by Ansible."
+  description = "Contents of the SSH public key used by Ansible (SSH runs inside an SSM session)."
   type        = string
-}
-
-variable "allowed_cidrs" {
-  description = "CIDRs allowed to reach the Elasticsearch HTTPS API (9200) and SSH (22)."
-  type        = list(string)
 }
 
 variable "alarm_sns_topic_arn" {

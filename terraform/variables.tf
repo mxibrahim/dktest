@@ -39,15 +39,9 @@ variable "root_volume_size" {
 }
 
 variable "ssh_public_key_path" {
-  description = "SSH public key installed on the nodes; the matching private key (same path without .pub) is used by Ansible."
+  description = "SSH public key installed on the nodes; the matching private key (same path without .pub) is used by Ansible over SSM."
   type        = string
   default     = "~/.ssh/dktest_ed25519.pub"
-}
-
-variable "allowed_cidrs" {
-  description = "CIDRs allowed to reach 9200/22. Empty = auto-detect the caller's public IP (/32)."
-  type        = list(string)
-  default     = []
 }
 
 variable "alarm_sns_topic_arn" {

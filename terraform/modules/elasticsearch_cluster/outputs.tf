@@ -9,9 +9,8 @@ output "nodes" {
       name        = "es-node-${i + 1}"
       instance_id = inst.id
       az          = inst.availability_zone
-      public_ip   = inst.public_ip
-      public_dns  = inst.public_dns
       private_ip  = inst.private_ip
+      private_dns = inst.private_dns
     }
   ]
 }
