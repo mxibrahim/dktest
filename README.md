@@ -588,6 +588,13 @@ Manager (free; the only operator access path).
 <!-- TODO: add anything else you looked up while doing the exercise -->
 
 ## Time spent and feedback
-<!-- TODO (candidate): fill in honestly -->
-- **Time spent:** _TBD_
-- **Feedback:** _TBD_
+- **Time spent:** about 3.5 hours. Around 2.5 hours went on the core solution,
+  plus extra time for AWS account and region setup, moving the nodes to private
+  subnets with SSM access, and waiting on slow `t3.micro` instances while
+  testing.
+- **Feedback:** A good, practical exercise covering infrastructure automation
+  and security. One suggestion: base it on a real use case. Who uses the
+  cluster, how much data it holds, and what availability or compliance needs
+  it has would make the design decisions meaningful, such as sizing, topology,
+  access model and region. As it stands, the task is to set up Elasticsearch
+  without knowing what problem it is meant to solve.
